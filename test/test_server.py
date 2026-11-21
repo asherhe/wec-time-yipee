@@ -1,3 +1,5 @@
+"""test socket connection of src/server.py, with a dummy server"""
+
 import socket
 
 HOST = "127.0.0.1"
