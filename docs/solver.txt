@@ -1,0 +1,53 @@
+linear programming
+
+for each building i:
+1. solar + gird + battery = load
+2. sum(battery[i]) <= current_storage
+3. sum(solar[i]) <= 200
+4. solar[i] == 0 if i is lecture hall
+5. current_battery <= 100
+6. generate <= 100 - curret_battery  + sum(battery[i])
+
+grid price, weather
+
+---
+
+assumptions:
+- grid price, energy use rises during the day
+- grid price, energy use are symmetric around the middle of the day
+- 
+
+                 __ 
+              _/    \
+            /    |     \
+         __/     |       \
+________/    A   |   B     \-________
+          |      |      |
+        grid=1  mid   grid=1
+          t0     t1      t2
+
+t2-t1 \approx t1-t0
+A \approx B
+
+time <= t1:                  
+- guess next hour's load based on (2nd-order?) taylok
+  - lots of noise, maybe a EMA?
+- ensure battery level is 
+
+time <= t0:
+- use solar entirely
+- replenish battery to match prediction
+
+t0 < time <= t1
+- use battery to fill as much as possible
+
+t1:
+- determine A (sum of all load, incl. solar)
+- expected value of solar contribution = (t1-t0) * 200 * cloud_probability
+- charge remaining: A-expected solar contribution
+
+t1 < time <= t2
+- 
+
+t2 < time
+- 

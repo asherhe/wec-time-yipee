@@ -27,6 +27,9 @@ class EnergyAlloc:
     battery: float
     grid: float
 
+    def total(self):
+        return self.solar + self.battery + self.grid
+
 @dataclass
 class EnergyOutput:
     buildings: list[EnergyAlloc]

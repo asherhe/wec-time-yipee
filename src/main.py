@@ -1,6 +1,6 @@
 import argparse
 
-from control import Control
+from control import Control, PredictControl
 from server import Server
 from testing import Testing
 
@@ -17,7 +17,7 @@ def main():
 
     args = parser.parse_args()
 
-    control = Control()
+    control = PredictControl()
 
     if args.test:
         t = Testing(control)
