@@ -2,6 +2,7 @@ import argparse
 
 from control import Control
 from server import Server
+from testing import Testing
 
 
 def main():
@@ -19,8 +20,8 @@ def main():
     control = Control()
 
     if args.test:
-        # TODO
-        pass
+        t = Testing(control)
+        t.run()
     else:
         s = Server("127.0.0.1", 8800, control)
         s.run()
