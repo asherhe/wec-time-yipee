@@ -34,6 +34,11 @@ TOTAL COST: {self.total_cost}
             battery_use += alloc.battery
             grid_use += alloc.grid
 
+        assert state.random_event != RandomEvent.CLOUDY_WEATHER or solar_use > 0.0
+        assert state.random_event != RandomEvent.BATTERY_FAILURE or battery_use > 0.0
+        assert state.random_event != RandomEvent.GRID_FAILURE or grid_use > 0.0
+        assert state.random_event != RandomEvent.GENERATOR_FAILURE or output.generator > 0.0
+
         assert solar_use <= 200.0
         assert self.battery_charge >= battery_use
 
