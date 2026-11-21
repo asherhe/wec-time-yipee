@@ -12,12 +12,12 @@ class RandomEvent(Enum):
 @dataclass
 class BuildingLoad:
     type: str
-    load: float
+    load: int
 
 @dataclass
 class HourlyState:
     random_event: RandomEvent
-    forecast: bool
+    forecast: bool # True if cloudy
     loads: list[BuildingLoad]
     grid_price: float
 
