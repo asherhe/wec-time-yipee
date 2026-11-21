@@ -1,8 +1,8 @@
 import json
 import socket
 
-from .control import Control
-from .model import BuildingLoad, EnergyOutput, HourlyState, RandomEvent
+from control import Control
+from model import BuildingLoad, EnergyOutput, HourlyState, RandomEvent
 
 
 def decode_state(data: dict):

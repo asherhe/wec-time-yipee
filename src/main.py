@@ -1,7 +1,7 @@
 import argparse
 
-from .control import Control
-from .server import Server
+from control import Control
+from server import Server
 
 
 def main():

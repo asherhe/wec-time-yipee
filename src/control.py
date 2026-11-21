@@ -1,4 +1,4 @@
-from .model import EnergyOutput, HourlyState
+from model import EnergyOutput, HourlyState
 
 
 class Control:
