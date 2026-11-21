@@ -47,31 +47,37 @@ class PredictControl(Control):
         # build output tables
         buildings = [EnergyAlloc(0, 0, 0) for l in self.state.loads]
         # exhuast solar
-        for i, l in enumerate(self.state.loads):
-            if l.type != "lecture_hall":
-                buildings[i].solar = min(self.solar_use, l.load)
-                self.solar_use -= buildings[i].solar
+        if self.state.random_event != RandomEvent.CLOUDY_WEATHER:
+            for i, l in enumerate(self.state.loads):
+                if l.type != "lecture_hall":
+                    buildings[i].solar = min(self.solar_use, l.load)
+                    self.solar_use -= buildings[i].solar
 
         # use up battery and grid
         additional_grid = 0.0  # unaccounted grid use
         for i, l in enumerate(self.state.loads):
             energy_req = l.load - buildings[i].total()
 
-            battery_alloc = min(energy_req, self.battery_use)
-            buildings[i].battery += battery_alloc
-            self.battery_use -= battery_alloc
-            energy_req -= battery_alloc
+            if self.state.random_event != RandomEvent.BATTERY_FAILURE:
+                battery_alloc = min(energy_req, self.battery_use)
+                buildings[i].battery += battery_alloc
+                self.battery_use -= battery_alloc
+                energy_req -= battery_alloc
 
-            grid_alloc = min(energy_req, self.grid_use)
-            buildings[i].grid += grid_alloc
-            self.grid_use -= grid_alloc
-            energy_req -= grid_alloc
+            if self.state.random_event != RandomEvent.GRID_FAILURE:
+                grid_alloc = min(energy_req, self.grid_use)
+                buildings[i].grid += grid_alloc
+                self.grid_use -= grid_alloc
+                energy_req -= grid_alloc
 
-            additional_grid += energy_req
-            buildings[i].grid += energy_req
+                additional_grid += energy_req
+                buildings[i].grid += energy_req
 
         if additional_grid > 0.0:
             print(f"WARN: consumed {additional_grid} units of unaccounted grid power")
+
+        if self.state.random_event != RandomEvent.GENERATOR_FAILURE:
+            self.gen_units = 0.0
 
         self.battery_charge += self.gen_units
 
