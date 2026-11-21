@@ -15,7 +15,6 @@ class Testing:
         for hour, state in enumerate(cases):
             print(f"==== Hour {hour} ====")
 
-            state = self.generate(hour)
             output = self.control.update(state)
 
             solar_use = 0.0
@@ -27,14 +26,14 @@ class Testing:
                 grid_use += alloc.grid
 
             assert solar_use <= 200.0
-            assert battery_charge >= battery_use
+            assert self.battery_charge >= battery_use
 
-            battery_charge += output.generator - battery_use
-            total_cost += output.generator + grid_use * state.grid_price
+            self.battery_charge += output.generator - battery_use
+            self.total_cost += output.generator + grid_use * state.grid_price
 
             print(f"""\
-Total cost        {total_cost}
-Battery charge    {battery_charge}
+Total cost        {self.total_cost}
+Battery charge    {self.battery_charge}
 Usage:
     Solar      {solar_use}
     Battery    {battery_use}
@@ -43,9 +42,9 @@ Usage:
 
         print(f"""\
 ========== run summary ========
-TOTAL COST: {total_cost}
+TOTAL COST: {self.total_cost}
 """)
-        return total_cost
+        return self.total_cost
 
     def generate(self) -> list[HourlyState]:
         HOURS = 24
@@ -61,6 +60,18 @@ TOTAL COST: {total_cost}
             k=HOURS + 1,
         )
 
+        num_buildings = random.randint(7, 10)
+        buildings = random.choices(
+            [
+                "library",
+                "laboratory",
+                "lecture_hall",
+                "student_centre",
+                "student_residence",
+            ],
+            k=num_buildings,
+        )
+
         states = []
         for i in range(HOURS):
             next_event = event_seq[i + 1]
@@ -69,12 +80,24 @@ TOTAL COST: {total_cost}
             if random.random() >= 0.75:  # 75% correctness
                 forecast = not forecast
 
+            # random ass curve that peaks during school hours, 9-17
+            base_power = 1.0 / (1.0 + 0.05 * (i - 13.0) ** 2)
+
+            building_loads = [
+                int((base_power + 0.2 * (random.random() - 0.5)) * 65 + 5)
+                for b in buildings
+            ]
+
             states.append(
                 HourlyState(
                     random_event=event_seq[i],
                     forecast=forecast,
-                    loads=[],
-                    grid_price=0.5 * (2 - 0.5) * random.random(),
+                    loads=[
+                        BuildingLoad(type, load)
+                        for type, load in zip(buildings, building_loads)
+                    ],
+                    grid_price=0.5 + (2 - 0.5) * random.random(),
                 )
             )
+
         return states
