@@ -29,3 +29,4 @@ else lecture_hall_sum -= current_battery;
 current_battery = 0
 
 grid = grid_price * (load_other_sum + lecture_hall_sum)
+
