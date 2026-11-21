@@ -19,7 +19,7 @@ class HourlyState:
     random_event: RandomEvent
     forecast: bool # True if cloudy
     loads: list[BuildingLoad]
-    grid_price: float
+    grid_cost: float
 
 @dataclass
 class EnergyAlloc:

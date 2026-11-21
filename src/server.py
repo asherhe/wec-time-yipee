@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecoder
 import socket
 
 from control import Control
@@ -19,7 +20,7 @@ def decode_state(data: dict):
             BuildingLoad(type=load["type"], load=int(load["load"]))
             for load in data["loads"]
         ],
-        grid_price=float(data["grid_price"]),
+        grid_cost=float(data["grid_cost"]),
     )
 
 
@@ -42,18 +43,36 @@ class Server:
         self.control = control
 
     def run(self):
+        decoder = JSONDecoder()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((self.host, self.port))
             for _ in range(24):
-                in_data = s.recv(1024).decode()
-                hourly_state = decode_state(json.loads(in_data))
+                buf = ""
+                while True:
+                    stripped = buf.lstrip()
+                    if stripped:
+                        try:
+                            obj, end_idx = decoder.raw_decode(stripped)
+                            buf = stripped[end_idx:]
+                            break
+                        except json.JSONDecodeError:
+                            pass
+
+                    chunk = s.recv(4096)
+                    if not chunk:
+                        raise ConnectionError(
+                            "connection closed before full message was recieved"
+                        )
+                    buf += chunk.decode("utf-8")
+
+                hourly_state = decode_state(obj)
                 print(hourly_state)
                 out = self.control.update(hourly_state)
-                out_data = json.dumps(encode_out(out))
-                s.sendall(bytes(out_data, encoding="utf-8"))
+                out_data = json.dumps(encode_out(out)) + "\n"
+                s.sendall(out_data.encode("utf-8"))
+
 
 if __name__ == "__main__":
     c = Control()
     s = Server("127.0.0.1", 8800, c)
     s.run()
-

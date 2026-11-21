@@ -20,7 +20,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 { "type": "lecture_hall", "load": 30 },
 { "type": "student_residence", "load": 50 },
 { "type": "lecture_hall", "load": 20 }],
-  "grid_price" : 1.2
+  "grid_cost" : 1.2
 }""")
             data = conn.recv(1024)
             print(data)

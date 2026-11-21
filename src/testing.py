@@ -38,13 +38,13 @@ TOTAL COST: {self.total_cost}
         assert self.battery_charge >= battery_use
 
         self.battery_charge += output.generator - battery_use
-        self.total_cost += output.generator + grid_use * state.grid_price
+        self.total_cost += output.generator + grid_use * state.grid_cost
 
         print(f"""\
 Total cost        {self.total_cost}
 Battery charge    {self.battery_charge}
 Generated power   {output.generator}
-Grid cost         {state.grid_price}
+Grid cost         {state.grid_cost}
 Usage:
     Solar      {solar_use}
     Battery    {battery_use}
@@ -101,7 +101,7 @@ Usage:
                         BuildingLoad(type, load)
                         for type, load in zip(buildings, building_loads)
                     ],
-                    grid_price=0.5 + (2 - 0.5) * random.random(),
+                    grid_cost=0.5 + (2 - 0.5) * random.random(),
                 )
             )
 

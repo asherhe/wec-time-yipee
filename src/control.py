@@ -105,7 +105,7 @@ class PredictControl(Control):
             solar_load -= self.solar_use
             self.total_load -= self.solar_use
 
-        if state.grid_price <= GEN_COST and self.hour < 24:
+        if state.grid_cost <= GEN_COST and self.hour < 24:
             # it is cheaper to power the entire thing by grid
             # except for the final hour, discharge all battery in that case
             self.grid_use += self.total_load
