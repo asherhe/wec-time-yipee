@@ -6,14 +6,13 @@ from model import BuildingLoad, HourlyState, RandomEvent
 class Testing:
     def __init__(self, control: Control):
         self.control = control
-        self.hours = 24
-        self.building_count = 10
 
     def run(self):
-        total_cost = 0.0
-        battery_charge = 0.0
+        self.total_cost = 0.0
+        self.battery_charge = 0.0
+        cases = self.generate()
 
-        for hour in range(self.hours):
+        for hour, state in enumerate(cases):
             print(f"==== Hour {hour} ====")
 
             state = self.generate(hour)
@@ -48,10 +47,34 @@ TOTAL COST: {total_cost}
 """)
         return total_cost
 
-    def generate(self, hour) -> HourlyState:
-        return HourlyState(
-            random_event=RandomEvent.NONE,
-            forecast=False,
-            loads=[],
-            grid_price=1.0,
+    def generate(self) -> list[HourlyState]:
+        HOURS = 24
+
+        event_seq = random.choices(
+            [
+                RandomEvent.NONE,
+                RandomEvent.CLOUDY_WEATHER,
+                RandomEvent.GENERATOR_FAILURE,
+                RandomEvent.BATTERY_FAILURE,
+                RandomEvent.GRID_FAILURE,
+            ],
+            k=HOURS + 1,
         )
+
+        states = []
+        for i in range(HOURS):
+            next_event = event_seq[i + 1]
+
+            forecast = next_event == RandomEvent.CLOUDY_WEATHER
+            if random.random() >= 0.75:  # 75% correctness
+                forecast = not forecast
+
+            states.append(
+                HourlyState(
+                    random_event=event_seq[i],
+                    forecast=forecast,
+                    loads=[],
+                    grid_price=0.5 * (2 - 0.5) * random.random(),
+                )
+            )
+        return states
