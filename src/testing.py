@@ -5,8 +5,9 @@ from model import BuildingLoad, EnergyOutput, HourlyState, RandomEvent
 
 
 class Testing:
-    def __init__(self, control: Control):
+    def __init__(self, control: Control, seed: int = 69420):
         self.control = control
+        random.seed(seed)
 
     def run(self):
         self.total_cost = 0.0
