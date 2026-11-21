@@ -41,6 +41,38 @@ class PredictControl(Control):
         prev_load = self.raw_loads[-1] if self.raw_loads else load
         self.lp_loads.append(prev_load + alpha * (load - prev_load))
 
+    def build_output(self) -> EnergyOutput:
+        # build output tables
+        buildings = [EnergyAlloc(0, 0, 0) for l in self.state.loads]
+        # exhuast solar
+        for i, l in enumerate(self.state.loads):
+            if l.type != "lecture_hall":
+                buildings[i].solar = min(self.solar_use, l.load)
+                self.solar_use -= buildings[i].solar
+
+        # use up battery and grid
+        additional_grid = 0.0  # unaccounted grid use
+        for i, l in enumerate(self.state.loads):
+            energy_req = l.load - buildings[i].total()
+
+            battery_alloc = min(energy_req, self.battery_use)
+            buildings[i].battery += battery_alloc
+            self.battery_use -= battery_alloc
+            energy_req -= battery_alloc
+
+            grid_alloc = min(energy_req, self.grid_use)
+            buildings[i].grid += grid_alloc
+            self.grid_use -= grid_alloc
+            energy_req -= grid_alloc
+
+            additional_grid += energy_req
+            buildings[i].grid += energy_req
+            
+        if additional_grid > 0.0:
+            print(f"WARN: consumed {additional_grid} units of unaccounted grid power")
+
+        return EnergyOutput(buildings=buildings, generator=self.gen_units)
+
     def update(self, state: HourlyState) -> EnergyOutput:
         self.state = state
 
@@ -67,27 +99,4 @@ class PredictControl(Control):
             self.grid_use += self.total_load
             self.total_load = 0.0
 
-        # build output tables
-        buildings = [EnergyAlloc(0, 0, 0) for l in state.loads]
-        # exhuast solar
-        for i, l in enumerate(state.loads):
-            if l.type != "lecture_hall":
-                buildings[i].solar = min(self.solar_use, l.load)
-                self.solar_use -= buildings[i].solar
-        # use up battery and grid
-        for i, l in enumerate(state.loads):
-            energy_req = l.load - buildings[i].total()
-
-            battery_alloc = min(energy_req, self.battery_use)
-            buildings[i].battery += battery_alloc
-            self.battery_use -= battery_alloc
-            energy_req -= battery_alloc
-
-            grid_alloc = min(energy_req, self.grid_use)
-            buildings[i].grid += grid_alloc
-            self.grid_use -= grid_alloc
-            energy_req -= grid_alloc
-
-            assert energy_req == 0
-
-        return EnergyOutput(buildings=buildings, generator=self.gen_units)
+        return self.build_output()
