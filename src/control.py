@@ -22,6 +22,8 @@ class PredictControl(Control):
         self.t1 = 0.0  # time of maximum use
         self.t2 = 0.0  # time when grid price returns below 1.0
 
+        self.hour = 0
+
     def get_loads(self) -> tuple[int, int]:
         lec_load = 0  # lecture halls, no solar power
         solar_load = 0  # can be powered by solar
@@ -76,6 +78,8 @@ class PredictControl(Control):
         return EnergyOutput(buildings=buildings, generator=self.gen_units)
 
     def update(self, state: HourlyState) -> EnergyOutput:
+        self.hour += 1
+
         self.state = state
 
         lec_load, solar_load = self.get_loads()
@@ -101,7 +105,9 @@ class PredictControl(Control):
             solar_load -= self.solar_use
             self.total_load -= self.solar_use
 
-        if state.grid_price <= GEN_COST:
+        if state.grid_price <= GEN_COST and self.hour < 24:
+            # it is cheaper to power the entire thing by grid
+            # except for the final hour, discharge all battery in that case
             self.grid_use += self.total_load
             self.total_load = 0.0
         else:
@@ -117,8 +123,10 @@ class PredictControl(Control):
         print(f"next (predicted) = {next_load}")
         if len(self.lp_loads) > 2:
             print(f"pred {self.lp_loads[-2] * 2 - self.lp_loads[-3]} actual {TOTAL_LOAD_0}")
+
+        expected_solar = 200
         # TODO: using 200 as expected solar contribution
-        target_battery = next_load - min(200, SOLAR_LOAD_0)
+        target_battery = next_load - min(expected_solar, SOLAR_LOAD_0)
         self.gen_units = max(0, target_battery - self.battery_charge)
 
         return self.build_output()
