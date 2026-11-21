@@ -14,7 +14,7 @@ class PredictControl(Control):
         self.battery_charge = 0.0
 
         # low-pass filter
-        self.fc = 0.10  # cutoff frequency
+        self.fc = 0.20  # cutoff frequency
         self.raw_loads: list[float] = []  # raw load history
         self.lp_loads: list[float] = []  # low-pass load history
 
@@ -67,9 +67,11 @@ class PredictControl(Control):
 
             additional_grid += energy_req
             buildings[i].grid += energy_req
-            
+
         if additional_grid > 0.0:
             print(f"WARN: consumed {additional_grid} units of unaccounted grid power")
+
+        self.battery_charge += self.gen_units
 
         return EnergyOutput(buildings=buildings, generator=self.gen_units)
 
@@ -77,6 +79,10 @@ class PredictControl(Control):
         self.state = state
 
         lec_load, solar_load = self.get_loads()
+        self.total_load = lec_load + solar_load
+        # freeze original state
+        LEC_LOAD_0, SOLAR_LOAD_0 = lec_load, solar_load
+        TOTAL_LOAD_0 = self.total_load
 
         GEN_COST = 1.0
         SOLAR_LIMIT = 200.0
@@ -88,15 +94,31 @@ class PredictControl(Control):
         self.grid_use = 0.0
         self.gen_units = 0.0
 
-        self.total_load = lec_load + solar_load
         self.low_pass_calc(self.total_load)
 
         if has_solar:
             self.solar_use += min(solar_load, SOLAR_LIMIT)
             solar_load -= self.solar_use
+            self.total_load -= self.solar_use
 
         if state.grid_price <= GEN_COST:
             self.grid_use += self.total_load
             self.total_load = 0.0
+        else:
+            battery_alloc = min(self.battery_charge, self.total_load)
+            self.battery_use += battery_alloc
+            self.total_load -= battery_alloc
+            self.battery_charge -= battery_alloc
+
+        # linearly extrapolate next load
+        next_load = self.lp_loads[-1]
+        if len(self.lp_loads) > 1:
+            next_load += self.lp_loads[-1] - self.lp_loads[-2]
+        print(f"next (predicted) = {next_load}")
+        if len(self.lp_loads) > 2:
+            print(f"pred {self.lp_loads[-2] * 2 - self.lp_loads[-3]} actual {TOTAL_LOAD_0}")
+        # TODO: using 200 as expected solar contribution
+        target_battery = next_load - min(200, SOLAR_LOAD_0)
+        self.gen_units = max(0, target_battery - self.battery_charge)
 
         return self.build_output()

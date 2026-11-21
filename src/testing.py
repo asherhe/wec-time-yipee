@@ -43,6 +43,8 @@ TOTAL COST: {self.total_cost}
         print(f"""\
 Total cost        {self.total_cost}
 Battery charge    {self.battery_charge}
+Generated power   {output.generator}
+Grid cost         {state.grid_price}
 Usage:
     Solar      {solar_use}
     Battery    {battery_use}
