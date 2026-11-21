@@ -1,6 +1,7 @@
 import random
+
 from control import Control
-from model import BuildingLoad, HourlyState, RandomEvent
+from model import BuildingLoad, EnergyOutput, HourlyState, RandomEvent
 
 
 class Testing:
@@ -14,24 +15,31 @@ class Testing:
 
         for hour, state in enumerate(cases):
             print(f"==== Hour {hour} ====")
-
             output = self.control.update(state)
+            self.update(output, state)
 
-            solar_use = 0.0
-            battery_use = 0.0
-            grid_use = 0.0
-            for alloc in output.buildings:
-                solar_use += alloc.solar
-                battery_use += alloc.battery
-                grid_use += alloc.grid
+        print(f"""\
+========== run summary ========
+TOTAL COST: {self.total_cost}
+""")
+        return self.total_cost
 
-            assert solar_use <= 200.0
-            assert self.battery_charge >= battery_use
+    def update(self, output: EnergyOutput, state: HourlyState):
+        solar_use = 0.0
+        battery_use = 0.0
+        grid_use = 0.0
+        for alloc in output.buildings:
+            solar_use += alloc.solar
+            battery_use += alloc.battery
+            grid_use += alloc.grid
 
-            self.battery_charge += output.generator - battery_use
-            self.total_cost += output.generator + grid_use * state.grid_price
+        assert solar_use <= 200.0
+        assert self.battery_charge >= battery_use
 
-            print(f"""\
+        self.battery_charge += output.generator - battery_use
+        self.total_cost += output.generator + grid_use * state.grid_price
+
+        print(f"""\
 Total cost        {self.total_cost}
 Battery charge    {self.battery_charge}
 Usage:
@@ -39,12 +47,6 @@ Usage:
     Battery    {battery_use}
     Grid       {grid_use}
 """)
-
-        print(f"""\
-========== run summary ========
-TOTAL COST: {self.total_cost}
-""")
-        return self.total_cost
 
     def generate(self) -> list[HourlyState]:
         HOURS = 24
